@@ -5,6 +5,7 @@
 package fullscreenslideshow;
 
 import java.awt.Component;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -37,7 +38,8 @@ class Slideshow extends Component {
     private long newestModified;
     private BufferedImage[] images;
     private boolean imagesLoaded;
-    
+    private int currentSlide;
+    private String folderPath;
 
     /*
      * This is the constructor for the slideshow object. It should perform the
@@ -45,11 +47,12 @@ class Slideshow extends Component {
      * to track changes to the images in the directory.
      *
      */
-    public Slideshow(String folderPath) {
+    public Slideshow(String path) {
         //load folder
+        folderPath = path;
         File folder = new File(folderPath);
         File[] imageFiles = folder.listFiles(new OnlyImage()); //load array with all image files found in folder
-        
+
         //if the folder is empty
         if (imageFiles == null) {
             System.out.println("The folder was empty or did not contain images.");
@@ -69,13 +72,31 @@ class Slideshow extends Component {
             }
             newestModified = getLatestModified(imageFiles); //set modified time to be checked on next update
             imagesLoaded = true;
+            currentSlide = 0;
 
+        }
+    }
+
+
+    public int getCurrentSlide() {
+        return currentSlide;
+    }
+
+    public void setCurrentSlide(int currentSlide) {
+        this.currentSlide = currentSlide;
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        if (imagesLoaded) {
+            g.drawImage(images[currentSlide], 0, 0, null);
         }
     }
     /*
      * This method returns the latest modified timestamp of the files in the
      * given array of files.
      */
+
     private static long getLatestModified(File[] files) {
         long longTime = 0L;
         if (files == null) {
@@ -91,7 +112,7 @@ class Slideshow extends Component {
 
         return longTime;
     }
-    
+
     /*
      * Subclass that implements a filter to only get images from the folder.
      */
