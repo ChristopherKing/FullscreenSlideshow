@@ -77,6 +77,43 @@ class Slideshow extends Component {
         }
     }
 
+    /*
+     * This method will check the folder to see if any new files have been
+     * uploaded or any files have been changed. If there has been changes then
+     * it will reload the directory, update "images", and return true. If not
+     * then it will simply do nothing and return false;
+     */
+    public boolean checkUpdates() {
+        //get images/files to check them
+        File folder = new File(folderPath);
+        File[] imageFiles = folder.listFiles(new OnlyImage());
+        long tempTime = getLatestModified(imageFiles);
+        //if stored modified timestamp is the same then we dont need to do anything
+        if (newestModified >= tempTime) {
+            return false;
+        }
+        //otherwise the folder has been updated so reload images and reset modified time
+        newestModified = tempTime;
+        imagesLoaded = false;
+        //flush old bufferedImages
+        for (int i = 0; i < images.length; i++) {
+            images[i].flush();
+        }
+
+        images = new BufferedImage[imageFiles.length]; //new array
+        //get new images
+        for (int i = 0; i < imageFiles.length; i++) {
+            try {
+                images[i] = ImageIO.read(imageFiles[i]);
+            } catch (IOException e) {
+                System.err.println("Caught IOException: " + e.getMessage());
+                System.exit(1);
+            }
+        }
+        imagesLoaded = true;
+        
+        return true;
+    }
 
     public int getCurrentSlide() {
         return currentSlide;
