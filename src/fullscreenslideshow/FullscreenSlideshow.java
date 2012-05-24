@@ -82,8 +82,10 @@ class Slideshow extends Component {
      * uploaded or any files have been changed. If there has been changes then
      * it will reload the directory, update "images", and return true. If not
      * then it will simply do nothing and return false;
+     * 
+     * Returning a boolean is really for future updates. It is not used at the moment.
      */
-    public boolean checkUpdates() {
+    private boolean checkUpdates() {
         //get images/files to check them
         File folder = new File(folderPath);
         File[] imageFiles = folder.listFiles(new OnlyImage());
@@ -115,12 +117,37 @@ class Slideshow extends Component {
         return true;
     }
 
+    /*
+     * Allows app to get current slide. Not really used at the moment.
+     */
     public int getCurrentSlide() {
         return currentSlide;
     }
-
-    public void setCurrentSlide(int currentSlide) {
-        this.currentSlide = currentSlide;
+    
+    /*
+     * Allows app to force slideshow to repaint itself.
+     */
+    public void doRepaint() {
+        this.repaint();
+    }
+    
+    /*
+     * This method advances the slideshow to the nextslide.
+     * If the slideshow was on the last slide then it calls checkUpdates and
+     * resets currentSlide to 0 (so that it loops).
+     * 
+     * 
+     */
+    public void nextSlide() {
+        //check if we just displayed the last slide
+        if(currentSlide >= images.length-1) {
+            checkUpdates();
+            currentSlide = 0;
+            this.repaint();
+            return;
+        }
+        currentSlide++;
+        this.repaint();
     }
 
     @Override
