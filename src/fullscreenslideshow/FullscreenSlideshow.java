@@ -6,24 +6,66 @@ package fullscreenslideshow;
 
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 
 /**
  * This is the application class where the UI will be created and managed.
  *
  * @author Christopher King
  */
-public class FullscreenSlideshow {
+public class FullscreenSlideshow extends JFrame {
 
+    private int width;
+    private int height;
+    private String path;
+    public Slideshow x;
+    
+    
+    public FullscreenSlideshow(String path) {
+        this.path = path;
+        this.width = 800;
+        this.height = 800;
+    }
+    
+    public void init() {
+        buildUI();
+    }
+    
+    public void buildUI() {
+        x = new Slideshow(path);
+        this.add(x);
+        this.resize(width, height);
+        x.repaint();
+    }
+    
+    
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // TODO code application logic here
+        String path = "Z:\\test";
+        FullscreenSlideshow s = new FullscreenSlideshow(path);
+        s.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {System.exit(0);}
+        });
+        s.buildUI();
+        s.setExtendedState(s.MAXIMIZED_BOTH);
+        s.setUndecorated(true);
+        s.setVisible(true);
+        while(true) {
+            Thread.sleep(5000);
+            s.x.nextSlide();
+        }
+        
     }
 }
 
