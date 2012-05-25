@@ -37,6 +37,7 @@ public class FullscreenSlideshow extends JFrame {
 
     public void buildUI() {
         x = new Slideshow(path);
+        x.setHW(gc.getDevice().getDisplayMode().getHeight(), gc.getDevice().getDisplayMode().getWidth());
         this.add(x);
         this.setExtendedState(this.MAXIMIZED_BOTH);
         this.setUndecorated(true);
@@ -50,8 +51,11 @@ public class FullscreenSlideshow extends JFrame {
     public static void main(String[] args) throws InterruptedException {
         // TODO code application logic here
         String path = "Z:\\test";
+        //Get the graphics enironment and devices to allow windows to be created on multiple monitors
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
+        
+        //array of slideshows for each graphics device
         FullscreenSlideshow[] shows = new FullscreenSlideshow[gds.length];
         for (int i = 0; i < gds.length; i++) {
             shows[i] = new FullscreenSlideshow(path, gds[i].getDefaultConfiguration());
@@ -65,10 +69,11 @@ public class FullscreenSlideshow extends JFrame {
         }
         //FullscreenSlideshow s = new FullscreenSlideshow(path);
         while (true) {
+            Thread.sleep(5000);
             for(int i=0; i<shows.length; i++) {
                 shows[i].x.nextSlide();
             }
-            Thread.sleep(5000);
+            
         }
 
     }
@@ -87,6 +92,8 @@ class Slideshow extends Component {
     private boolean imagesLoaded;
     private int currentSlide;
     private String folderPath;
+    private int h;
+    private int w;
 
     /*
      * This is the constructor for the slideshow object. It should perform the
@@ -120,6 +127,8 @@ class Slideshow extends Component {
             newestModified = getLatestModified(imageFiles); //set modified time to be checked on next update
             imagesLoaded = true;
             currentSlide = 0;
+            h = 0;
+            w = 0;
 
         }
     }
@@ -171,6 +180,15 @@ class Slideshow extends Component {
     public int getCurrentSlide() {
         return currentSlide;
     }
+    
+    /*
+     * This method is here to allow the app class to tell us the size of its window
+     * This allows the image to be scaled to the full size easily.
+     */
+    public void setHW(int height, int width) {
+        this.h = height;
+        this.w = width;
+    }
 
     /*
      * This method advances the slideshow to the nextslide. If the slideshow was
@@ -194,7 +212,7 @@ class Slideshow extends Component {
     @Override
     public void paint(Graphics g) {
         if (imagesLoaded) {
-            g.drawImage(images[currentSlide], 0, 0, null);
+            g.drawImage(images[currentSlide].getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH), 0, 0, null);
         }
     }
     /*
