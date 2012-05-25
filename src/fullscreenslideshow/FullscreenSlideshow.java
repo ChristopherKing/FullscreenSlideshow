@@ -22,16 +22,12 @@ import javax.swing.JFrame;
  */
 public class FullscreenSlideshow extends JFrame {
 
-    private int width;
-    private int height;
     private String path;
     public Slideshow x;
     
     
     public FullscreenSlideshow(String path) {
         this.path = path;
-        this.width = 800;
-        this.height = 800;
     }
     
     public void init() {
@@ -41,7 +37,9 @@ public class FullscreenSlideshow extends JFrame {
     public void buildUI() {
         x = new Slideshow(path);
         this.add(x);
-        this.resize(width, height);
+        this.setExtendedState(this.MAXIMIZED_BOTH);
+        this.setUndecorated(true);
+        this.setVisible(true);
         x.repaint();
     }
     
@@ -58,9 +56,6 @@ public class FullscreenSlideshow extends JFrame {
             public void windowClosing(WindowEvent e) {System.exit(0);}
         });
         s.buildUI();
-        s.setExtendedState(s.MAXIMIZED_BOTH);
-        s.setUndecorated(true);
-        s.setVisible(true);
         while(true) {
             Thread.sleep(5000);
             s.x.nextSlide();
@@ -164,13 +159,6 @@ class Slideshow extends Component {
      */
     public int getCurrentSlide() {
         return currentSlide;
-    }
-    
-    /*
-     * Allows app to force slideshow to repaint itself.
-     */
-    public void doRepaint() {
-        this.repaint();
     }
     
     /*
