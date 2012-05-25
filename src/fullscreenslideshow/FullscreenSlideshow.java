@@ -1,8 +1,36 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * This program loads images from specified folders into fullscreen slideshows
+ * on specfified monitors. It dynamically reloads the sets of images so that a
+ * user can simply add or remove images from the folder to change the currently
+ * playing slideshow.
+ * 
+ * The program accepts command line arguements in the following style:
+ * <int for monitor number> "quotes enclosed string for folder path with double
+ * slashes"
+ * The monitors do not need to be in any particular order they simply need to
+ * follow the pattern of "monitor number" "folder path"
+ * 
+ * Ex. FullscreenSlideshow.jar 1 "C:\\test"
+ * This will load images from C:\test directory onto monitor 1.
+ * Ex. FullscreenSlideshow.jar 1 "C:\\test" 0 "C:\\test2"
+ * This will load images from C:\test onto monitor 1 and images from C:\test2
+ * onto monitor 0.
+ * 
+ * 
  */
-package fullscreenslideshow;
+/*
+ * TODO: 
+ * Fix memory issue. Currently the program loads all images in the directory
+ * into memory. This is fine until the directory has 400 full HD images. This
+ * begins to take up a lot of unnecessary memory. Need to implement some kind of
+ * buffer when the number of images gets too high.
+ * package fullscreenslideshow;
+ * 
+ * Another issue is the reloading of the images after every full rotation of the
+ * slideshow. If the slideshow is too long then it will take too long to update
+ * and if it is too short then there is a lot of unnecessary file access. There
+ * should be a way to manually trigger an update immedietally.
+ */
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -39,7 +67,7 @@ public class FullscreenSlideshow extends JFrame {
         x = new Slideshow(path);
         x.setHW(gc.getDevice().getDisplayMode().getHeight(), gc.getDevice().getDisplayMode().getWidth());
         this.add(x);
-        this.setExtendedState(this.MAXIMIZED_BOTH);
+        this.setExtendedState(FullscreenSlideshow.MAXIMIZED_BOTH);
         this.setUndecorated(true);
         this.setVisible(true);
         x.repaint();
@@ -49,40 +77,50 @@ public class FullscreenSlideshow extends JFrame {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws InterruptedException {
-        // TODO code application logic here
         String path = "Z:\\test";
         //Get the graphics enironment and devices to allow windows to be created on multiple monitors
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
         boolean[] use = new boolean[gds.length];
+        FullscreenSlideshow[] shows;
+        String[] paths;
+
         //if args has something in it and its less than or equal to the number of devices
-        if (args.length > 0 && args.length <= gds.length) {
-            for (int i = 0; i < args.length; i++) {
+        if (args.length > 0 && args.length <= gds.length * 2) {
+            for (int i = 0; i < args.length; i += 2) {
                 use[Integer.parseInt(args[i])] = true;
             }
         }
-        
-        //if no args then defult to use every device
-        if(args.length == 0) {
-            for(int i=0; i<use.length; i++) {
+
+        //if no args then defult to use every device and default path
+        if (args.length == 0) {
+            paths = new String[use.length];
+            for (int i = 0; i < use.length; i++) {
                 use[i] = true;
+                paths[i] = "Z:\\test";
             }
-        }
-        
-        //count the true's so that we dont waste space on unused Slideshows
-        int count = 0;
-        for (int i = 0; i < use.length; i++) {
-            if (use[i]) {
-                count++;
+            shows = new FullscreenSlideshow[use.length];
+        } else {
+            //count the true's so that we dont waste space on unused Slideshows
+            int count = 0;
+            for (int i = 0; i < use.length; i++) {
+                if (use[i]) {
+                    count++;
+                }
             }
+            paths = new String[count];
+            int temp = 1;
+            for (int i = 0; i < paths.length; i++) {
+                paths[i] = args[temp];
+                temp += 2;
+            }
+            shows = new FullscreenSlideshow[count];
         }
 
-        //array of slideshows for each graphics device
-        FullscreenSlideshow[] shows = new FullscreenSlideshow[count];
         int j = 0;
         for (int i = 0; i < gds.length; i++) {
             if (use[i]) {
-                shows[j] = new FullscreenSlideshow(path, gds[i].getDefaultConfiguration());
+                shows[j] = new FullscreenSlideshow(paths[j], gds[i].getDefaultConfiguration());
                 shows[j].addWindowListener(new WindowAdapter() {
 
                     @Override
@@ -175,9 +213,10 @@ class Slideshow extends Component {
         File[] imageFiles = folder.listFiles(new OnlyImage());
         long tempTime = getLatestModified(imageFiles);
         //if stored modified timestamp is the same then we dont need to do anything
+        /*
         if (newestModified >= tempTime) {
             return false;
-        }
+        }*/
         //otherwise the folder has been updated so reload images and reset modified time
         newestModified = tempTime;
         imagesLoaded = false;
