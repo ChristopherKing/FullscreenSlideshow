@@ -4,8 +4,7 @@
  */
 package fullscreenslideshow;
 
-import java.awt.Component;
-import java.awt.Graphics;
+import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -24,16 +23,18 @@ public class FullscreenSlideshow extends JFrame {
 
     private String path;
     public Slideshow x;
-    
-    
-    public FullscreenSlideshow(String path) {
+    private GraphicsConfiguration gc;
+
+    public FullscreenSlideshow(String path, GraphicsConfiguration gc) {
+        super(gc);
+        this.gc = gc;
         this.path = path;
     }
-    
+
     public void init() {
         buildUI();
     }
-    
+
     public void buildUI() {
         x = new Slideshow(path);
         this.add(x);
@@ -42,25 +43,34 @@ public class FullscreenSlideshow extends JFrame {
         this.setVisible(true);
         x.repaint();
     }
-    
-    
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws InterruptedException {
         // TODO code application logic here
         String path = "Z:\\test";
-        FullscreenSlideshow s = new FullscreenSlideshow(path);
-        s.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {System.exit(0);}
-        });
-        s.buildUI();
-        while(true) {
-            Thread.sleep(5000);
-            s.x.nextSlide();
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gds = ge.getScreenDevices();
+        FullscreenSlideshow[] shows = new FullscreenSlideshow[gds.length];
+        for (int i = 0; i < gds.length; i++) {
+            shows[i] = new FullscreenSlideshow(path, gds[i].getDefaultConfiguration());
+            shows[i].addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    System.exit(0);
+                }
+            });
+            shows[i].buildUI();
         }
-        
+        //FullscreenSlideshow s = new FullscreenSlideshow(path);
+        while (true) {
+            for(int i=0; i<shows.length; i++) {
+                shows[i].x.nextSlide();
+            }
+            Thread.sleep(5000);
+        }
+
     }
 }
 
@@ -119,8 +129,9 @@ class Slideshow extends Component {
      * uploaded or any files have been changed. If there has been changes then
      * it will reload the directory, update "images", and return true. If not
      * then it will simply do nothing and return false;
-     * 
-     * Returning a boolean is really for future updates. It is not used at the moment.
+     *
+     * Returning a boolean is really for future updates. It is not used at the
+     * moment.
      */
     private boolean checkUpdates() {
         //get images/files to check them
@@ -150,7 +161,7 @@ class Slideshow extends Component {
             }
         }
         imagesLoaded = true;
-        
+
         return true;
     }
 
@@ -160,17 +171,17 @@ class Slideshow extends Component {
     public int getCurrentSlide() {
         return currentSlide;
     }
-    
+
     /*
-     * This method advances the slideshow to the nextslide.
-     * If the slideshow was on the last slide then it calls checkUpdates and
-     * resets currentSlide to 0 (so that it loops).
-     * 
-     * 
+     * This method advances the slideshow to the nextslide. If the slideshow was
+     * on the last slide then it calls checkUpdates and resets currentSlide to 0
+     * (so that it loops).
+     *
+     *
      */
     public void nextSlide() {
         //check if we just displayed the last slide
-        if(currentSlide >= images.length-1) {
+        if (currentSlide >= images.length - 1) {
             checkUpdates();
             currentSlide = 0;
             this.repaint();
