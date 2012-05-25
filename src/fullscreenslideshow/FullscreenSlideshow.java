@@ -54,26 +54,53 @@ public class FullscreenSlideshow extends JFrame {
         //Get the graphics enironment and devices to allow windows to be created on multiple monitors
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
+        boolean[] use = new boolean[gds.length];
+        //if args has something in it and its less than or equal to the number of devices
+        if (args.length > 0 && args.length <= gds.length) {
+            for (int i = 0; i < args.length; i++) {
+                use[Integer.parseInt(args[i])] = true;
+            }
+        }
         
+        //if no args then defult to use every device
+        if(args.length == 0) {
+            for(int i=0; i<use.length; i++) {
+                use[i] = true;
+            }
+        }
+        
+        //count the true's so that we dont waste space on unused Slideshows
+        int count = 0;
+        for (int i = 0; i < use.length; i++) {
+            if (use[i]) {
+                count++;
+            }
+        }
+
         //array of slideshows for each graphics device
-        FullscreenSlideshow[] shows = new FullscreenSlideshow[gds.length];
+        FullscreenSlideshow[] shows = new FullscreenSlideshow[count];
+        int j = 0;
         for (int i = 0; i < gds.length; i++) {
-            shows[i] = new FullscreenSlideshow(path, gds[i].getDefaultConfiguration());
-            shows[i].addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    System.exit(0);
-                }
-            });
-            shows[i].buildUI();
+            if (use[i]) {
+                shows[j] = new FullscreenSlideshow(path, gds[i].getDefaultConfiguration());
+                shows[j].addWindowListener(new WindowAdapter() {
+
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        System.exit(0);
+                    }
+                });
+                shows[j].buildUI();
+                j++;
+            }
         }
         //FullscreenSlideshow s = new FullscreenSlideshow(path);
         while (true) {
             Thread.sleep(5000);
-            for(int i=0; i<shows.length; i++) {
+            for (int i = 0; i < shows.length; i++) {
                 shows[i].x.nextSlide();
             }
-            
+
         }
 
     }
@@ -180,10 +207,10 @@ class Slideshow extends Component {
     public int getCurrentSlide() {
         return currentSlide;
     }
-    
+
     /*
-     * This method is here to allow the app class to tell us the size of its window
-     * This allows the image to be scaled to the full size easily.
+     * This method is here to allow the app class to tell us the size of its
+     * window This allows the image to be scaled to the full size easily.
      */
     public void setHW(int height, int width) {
         this.h = height;
