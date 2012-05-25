@@ -42,6 +42,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
@@ -154,13 +156,13 @@ public class FullscreenSlideshow extends JFrame {
  */
 class Slideshow extends Component {
 
-    private long newestModified;
-    private BufferedImage[] images;
     private boolean imagesLoaded;
     private int currentSlide;
     private String folderPath;
     private int h;
     private int w;
+    
+    private File[] files;
 
     /*
      * This is the constructor for the slideshow object. It should perform the
@@ -172,26 +174,14 @@ class Slideshow extends Component {
         //load folder
         folderPath = path;
         File folder = new File(folderPath);
-        File[] imageFiles = folder.listFiles(new OnlyImage()); //load array with all image files found in folder
+        files = folder.listFiles(new OnlyImage()); //load array with all image files found in folder
 
         //if the folder is empty
-        if (imageFiles == null) {
+        if (files == null) {
             System.out.println("The folder was empty or did not contain images.");
             System.exit(0);
         } //otherwise it has something in it
         else {
-            //create an array to hold the images
-            images = new BufferedImage[imageFiles.length];
-            //populate image array with new images from file list in files array
-            for (int i = 0; i < imageFiles.length; i++) {
-                try {
-                    images[i] = ImageIO.read(imageFiles[i]); //create BufferedImages
-                } catch (IOException e) {
-                    System.err.println("Caught IOException: " + e.getMessage());
-                    System.exit(1);
-                }
-            }
-            newestModified = getLatestModified(imageFiles); //set modified time to be checked on next update
             imagesLoaded = true;
             currentSlide = 0;
             h = 0;
@@ -212,30 +202,13 @@ class Slideshow extends Component {
     private boolean checkUpdates() {
         //get images/files to check them
         File folder = new File(folderPath);
-        File[] imageFiles = folder.listFiles(new OnlyImage());
-        long tempTime = getLatestModified(imageFiles);
+        files = folder.listFiles(new OnlyImage());
         //if stored modified timestamp is the same then we dont need to do anything
         /*
          * if (newestModified >= tempTime) { return false; }
          */
         //otherwise the folder has been updated so reload images and reset modified time
-        newestModified = tempTime;
-        imagesLoaded = false;
-        //flush old bufferedImages
-        for (int i = 0; i < images.length; i++) {
-            images[i].flush();
-        }
 
-        images = new BufferedImage[imageFiles.length]; //new array
-        //get new images
-        for (int i = 0; i < imageFiles.length; i++) {
-            try {
-                images[i] = ImageIO.read(imageFiles[i]);
-            } catch (IOException e) {
-                System.err.println("Caught IOException: " + e.getMessage());
-                System.exit(1);
-            }
-        }
         imagesLoaded = true;
 
         return true;
@@ -266,7 +239,7 @@ class Slideshow extends Component {
      */
     public void nextSlide() {
         //check if we just displayed the last slide
-        if (currentSlide >= images.length - 1) {
+        if (currentSlide >= files.length - 1) {
             checkUpdates();
             currentSlide = 0;
             this.repaint();
@@ -279,7 +252,11 @@ class Slideshow extends Component {
     @Override
     public void paint(Graphics g) {
         if (imagesLoaded) {
-            g.drawImage(images[currentSlide].getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH), 0, 0, null);
+            try {
+                g.drawImage(ImageIO.read(files[currentSlide]).getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH), 0, 0, null);
+            } catch (IOException ex) {
+                Logger.getLogger(Slideshow.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
     /*
