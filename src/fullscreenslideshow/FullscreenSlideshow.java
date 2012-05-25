@@ -38,10 +38,10 @@ package fullscreenslideshow;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -55,8 +55,9 @@ import javax.swing.JFrame;
 public class FullscreenSlideshow extends JFrame {
 
     private String path;
-    public Slideshow x;
+    private Slideshow x;
     private GraphicsConfiguration gc;
+    private volatile RunSlides thread;
 
     public FullscreenSlideshow(String path, GraphicsConfiguration gc) {
         super(gc);
@@ -64,25 +65,73 @@ public class FullscreenSlideshow extends JFrame {
         this.path = path;
     }
 
-    public void init() {
-        buildUI();
+    public class RunSlides extends Thread {
+
+        private volatile Thread flag;
+
+        @Override
+        public void start() {
+            flag = new Thread(this);
+            flag.start();
+        }
+
+        public void quit() {
+            Thread tmpFlag = flag;
+            flag = null;
+            if (tmpFlag != null) {
+                tmpFlag.interrupt();
+            }
+        }
+
+        @Override
+        public void run() {
+            Thread thisThread = Thread.currentThread();
+            while (flag == thisThread) {
+                x.nextSlide();
+                try {
+                    RunSlides.sleep(5000);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException("Interrupted", ex);
+                }
+            }
+
+        }
+        
+        
     }
 
-    public void buildUI() {
+    public void startSlides() throws InterruptedException {
+        thread = new RunSlides();
+        thread.start();
+    }
+
+    public void buildUI() throws InterruptedException {
         x = new Slideshow(path);
         x.setHW(gc.getDevice().getDisplayMode().getHeight(), gc.getDevice().getDisplayMode().getWidth());
         this.add(x);
-        this.addWindowListener(new WindowAdapter() {
 
-            @Override
-            public void windowClosing(WindowEvent e) {
-                System.exit(0);
-            }
-        });
         this.setExtendedState(FullscreenSlideshow.MAXIMIZED_BOTH);
         this.setUndecorated(true);
         this.setVisible(true);
         x.repaint();
+        startSlides();
+        this.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                thread.quit();
+            }
+        });
+
+    }
+
+    public boolean isFinished() {
+
+        if (thread != null && thread.isAlive()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -136,14 +185,28 @@ public class FullscreenSlideshow extends JFrame {
                 j++;
             }
         }
-        //FullscreenSlideshow s = new FullscreenSlideshow(path);
-        while (true) {
-            Thread.sleep(5000);
+        boolean[] finished = new boolean[shows.length];
+        boolean[] allTrue = new boolean[shows.length];
+        for (int i = 0; i < allTrue.length; i++) {
+            allTrue[i] = true;
+        }
+        for (;;) {
             for (int i = 0; i < shows.length; i++) {
-                shows[i].x.nextSlide();
+                finished[i] = shows[i].isFinished();
             }
 
+            if (Arrays.equals(finished, allTrue)) {
+                System.exit(0);
+            }
         }
+
+        //FullscreenSlideshow s = new FullscreenSlideshow(path);
+        /*
+         * while (true) { Thread.sleep(5000); for (int i = 0; i < shows.length;
+         * i++) { shows[i].x.nextSlide(); }
+         *
+         * }
+         */
 
     }
 }
@@ -161,7 +224,6 @@ class Slideshow extends Component {
     private String folderPath;
     private int h;
     private int w;
-    
     private File[] files;
 
     /*
