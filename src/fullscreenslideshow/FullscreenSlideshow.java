@@ -28,7 +28,12 @@ package fullscreenslideshow;
  * Another issue is the reloading of the images after every full rotation of the
  * slideshow. If the slideshow is too long then it will take too long to update
  * and if it is too short then there is a lot of unnecessary file access. There
- * should be a way to manually trigger an update immedietally.
+ * should be a way to manually trigger an update immediately.
+ *
+ * Along the lines of the previous issues if is running all the slideshows in a
+ * single thread. If one slideshow has a lot of images it might hang up the
+ * other slideshow when it updates (because it has to load so many images).
+ * Should probably put slideshows in their own threads.
  */
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -65,6 +70,13 @@ public class FullscreenSlideshow extends JFrame {
         x = new Slideshow(path);
         x.setHW(gc.getDevice().getDisplayMode().getHeight(), gc.getDevice().getDisplayMode().getWidth());
         this.add(x);
+        this.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        });
         this.setExtendedState(FullscreenSlideshow.MAXIMIZED_BOTH);
         this.setUndecorated(true);
         this.setVisible(true);
@@ -118,13 +130,6 @@ public class FullscreenSlideshow extends JFrame {
         for (int i = 0; i < gds.length; i++) {
             if (use[i]) {
                 shows[j] = new FullscreenSlideshow(paths[j], gds[i].getDefaultConfiguration());
-                shows[j].addWindowListener(new WindowAdapter() {
-
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
                 shows[j].buildUI();
                 j++;
             }
@@ -211,8 +216,7 @@ class Slideshow extends Component {
         long tempTime = getLatestModified(imageFiles);
         //if stored modified timestamp is the same then we dont need to do anything
         /*
-         * if (newestModified >= tempTime) { return false;
-        }
+         * if (newestModified >= tempTime) { return false; }
          */
         //otherwise the folder has been updated so reload images and reset modified time
         newestModified = tempTime;
