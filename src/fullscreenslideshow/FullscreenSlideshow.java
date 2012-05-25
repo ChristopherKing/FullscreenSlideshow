@@ -77,7 +77,6 @@ public class FullscreenSlideshow extends JFrame {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws InterruptedException {
-        String path = "Z:\\test";
         //Get the graphics enironment and devices to allow windows to be created on multiple monitors
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
