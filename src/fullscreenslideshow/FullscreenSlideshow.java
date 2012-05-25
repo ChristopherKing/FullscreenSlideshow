@@ -1,37 +1,35 @@
+package fullscreenslideshow;
+
 /*
  * This program loads images from specified folders into fullscreen slideshows
  * on specfified monitors. It dynamically reloads the sets of images so that a
  * user can simply add or remove images from the folder to change the currently
  * playing slideshow.
- * 
- * The program accepts command line arguements in the following style:
- * <int for monitor number> "quotes enclosed string for folder path with double
- * slashes"
+ *
+ * The program accepts command line arguements in the following style: <int for
+ * monitor number> "quotes enclosed string for folder path with double slashes"
  * The monitors do not need to be in any particular order they simply need to
  * follow the pattern of "monitor number" "folder path"
- * 
- * Ex. FullscreenSlideshow.jar 1 "C:\\test"
- * This will load images from C:\test directory onto monitor 1.
- * Ex. FullscreenSlideshow.jar 1 "C:\\test" 0 "C:\\test2"
- * This will load images from C:\test onto monitor 1 and images from C:\test2
- * onto monitor 0.
- * 
- * 
+ *
+ * Ex. FullscreenSlideshow.jar 1 "C:\\test" This will load images from C:\test
+ * directory onto monitor 1. Ex. FullscreenSlideshow.jar 1 "C:\\test" 0
+ * "C:\\test2" This will load images from C:\test onto monitor 1 and images from
+ * C:\test2 onto monitor 0.
+ *
+ *
  */
 /*
- * TODO: 
- * Fix memory issue. Currently the program loads all images in the directory
- * into memory. This is fine until the directory has 400 full HD images. This
- * begins to take up a lot of unnecessary memory. Need to implement some kind of
- * buffer when the number of images gets too high.
- * package fullscreenslideshow;
- * 
+ * TODO: Fix memory issue. Currently the program loads all images in the
+ * directory into memory. This is fine until the directory has 400 full HD
+ * images. This begins to take up a lot of unnecessary memory. Need to implement
+ * some kind of buffer when the number of images gets too high.
+ *
+ *
  * Another issue is the reloading of the images after every full rotation of the
  * slideshow. If the slideshow is too long then it will take too long to update
  * and if it is too short then there is a lot of unnecessary file access. There
  * should be a way to manually trigger an update immedietally.
  */
-
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -213,9 +211,9 @@ class Slideshow extends Component {
         long tempTime = getLatestModified(imageFiles);
         //if stored modified timestamp is the same then we dont need to do anything
         /*
-        if (newestModified >= tempTime) {
-            return false;
-        }*/
+         * if (newestModified >= tempTime) { return false;
+        }
+         */
         //otherwise the folder has been updated so reload images and reset modified time
         newestModified = tempTime;
         imagesLoaded = false;
