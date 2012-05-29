@@ -98,6 +98,12 @@ public class FullscreenSlideshow extends JFrame {
         this.dispose();
     }
 
+    /*
+     * Method builds the UI and starts the threads to run the individual slideshows.
+     * It creates a fullscreen undecorated window and adds the slideshow component
+     * to the window. It then starts a new thread which continuously advanced to
+     * the next slide and sleeps until it is told to stop.
+     */
     public void buildUI() {
         x = new Slideshow(path);
         x.setHW(gc.getDevice().getDisplayMode().getHeight(), gc.getDevice().getDisplayMode().getWidth());
@@ -121,15 +127,6 @@ public class FullscreenSlideshow extends JFrame {
             }
         });
 
-    }
-
-    public boolean isFinished() {
-
-        if (thread != null && thread.isAlive()) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -196,20 +193,20 @@ public class FullscreenSlideshow extends JFrame {
 }
 
 /**
- * This is the background class where the actual slideshow will be implemented
- * This will contain the methods that draw and load the images.
+ * This is the background class where the slideshow is implemented. Extends
+ * component so that it can be added to a JFrame for easy UI building.
  *
  * @author Christopher King
  */
 class Slideshow extends Component {
 
-    private boolean imagesLoaded;
-    private int currentSlide;
-    private String folderPath;
+    private boolean imagesLoaded; //boolean representing if there are actually images to be drawn
+    private int currentSlide; //int representing the current slide being displayed
+    private String folderPath; //path to the folder for this slideshow
     private int h; //height of display
     private int w; //width of display
-    private File[] files;
-    private FontMetrics fm;
+    private File[] files; //array of image files
+    private FontMetrics fm; //used to center loading text
     private final Font F = new Font("Monospaced", Font.BOLD, 100);
 
     /*
@@ -238,9 +235,8 @@ class Slideshow extends Component {
     /*
      * This method reloads the directory containing the images. If no images are
      * found then it sets imagesLoaded to false (so we dont try to paint them)
-     * and tells the program that there are 0 slides. Since loading a list of
-     * files is easy (in terms of computing time) we can just do this everytime
-     * without regard for how many slides there might be.
+     * Since loading a list of files is easy (in terms of computing time) we can
+     * just do this everytime without regard for how many slides there might be.
      *
      */
     private void checkUpdates() {
@@ -285,7 +281,9 @@ class Slideshow extends Component {
             checkUpdates();
             currentSlide = 0;
             this.repaint();
-        } else {
+        } 
+        //if not just move to the next slide
+        else {
             currentSlide++;
             this.repaint();
         }
@@ -296,23 +294,22 @@ class Slideshow extends Component {
 
     @Override
     public void paint(Graphics g) {
-        if (fm == null) {
+        //if fm hasn't been set up yet then do that
+        if (fm == null)
             fm = g.getFontMetrics(F);
-            
-        }
 
+        //if there are images to display then do that
         if (imagesLoaded) {
             try {
                 g.drawImage(ImageIO.read(files[currentSlide]).getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH), 0, 0, null);
-                String temp = Integer.toString(currentSlide);
-                g.setFont(F);
-                g.drawString(temp, (w / 2 - fm.stringWidth(temp) / 2), h / 2);
             } catch (IOException ex) {
                 //if an IOException is thrown it probably means the file has been deleted
                 //so just update the slides and start over
                 this.checkUpdates();
             }
-        } else {
+        } 
+        //if images weren't there then display loading text in the meantime
+        else {
             g.setFont(F);
             g.drawString("Loading Images...", (w / 2 - fm.stringWidth("Loading Images...") / 2), h / 2);
         }
