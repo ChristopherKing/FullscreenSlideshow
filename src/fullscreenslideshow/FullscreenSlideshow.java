@@ -14,9 +14,8 @@ package fullscreenslideshow;
  * Ex. FullscreenSlideshow.jar 1 "C:\\test" This will load images from C:\test
  * directory onto monitor 1. Ex. FullscreenSlideshow.jar 1 "C:\\test" 0
  * "C:\\test2" This will load images from C:\test onto monitor 1 and images from
- * C:\test2 onto monitor 0.
- * TODO: 
- * 
+ * C:\test2 onto monitor 0. TODO:
+ *
  * What to do if the program detects no images needs to be handled. What if
  * someone deletes all the images so that they can load new ones. Program should
  * be able to handle this and simply wait for more images instead of dying.
@@ -27,8 +26,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
@@ -72,31 +69,30 @@ public class FullscreenSlideshow extends JFrame {
         public void run() {
             Thread thisThread = Thread.currentThread();
             while (flag == thisThread) {
-                x.nextSlide();
                 try {
                     RunSlides.sleep(5000);
                 } catch (InterruptedException ex) {
                     throw new RuntimeException("Interrupted", ex);
                 }
+                x.nextSlide();
             }
 
         }
-        
-        
     }
 
     /*
-     * Starts the slideshow running 
+     * Starts the slideshow running
      */
     public void startSlides() throws InterruptedException {
         thread = new RunSlides();
         thread.start();
     }
-    
+
     /*
      * This is a simple method that just gets rid of the graphics junk after the
      * program is finished so that the main thread will end. It is wrapped
-     * because there is no other way to access it in the windowclose event handler.
+     * because there is no other way to access it in the windowclose event
+     * handler.
      */
     private void endProgram() {
         this.dispose();
@@ -162,8 +158,7 @@ public class FullscreenSlideshow extends JFrame {
                 paths[i] = "Z:\\test";
             }
             shows = new FullscreenSlideshow[use.length];
-        } 
-        //otherwise there were arguments so assume they are in correct format
+        } //otherwise there were arguments so assume they are in correct format
         else {
             //count the true's so that we dont waste space on unused Slideshows
             int count = 0;
@@ -174,7 +169,8 @@ public class FullscreenSlideshow extends JFrame {
             }
             //creating array to hold paths entered in as command line arguments
             paths = new String[count];
-            /* This for loops loads paths to correspond with the use array and
+            /*
+             * This for loops loads paths to correspond with the use array and
              * therefor the shows array. However the paths in the command line
              * args are everyother argument so temp counts from 1,3,5,...
              */
@@ -210,9 +206,11 @@ class Slideshow extends Component {
     private boolean imagesLoaded;
     private int currentSlide;
     private String folderPath;
-    private int h;
-    private int w;
+    private int h; //height of display
+    private int w; //width of display
     private File[] files;
+    private FontMetrics fm;
+    private final Font F = new Font("Monospaced", Font.BOLD, 100);
 
     /*
      * This is the constructor for the slideshow object. It should perform the
@@ -227,41 +225,35 @@ class Slideshow extends Component {
         files = folder.listFiles(new OnlyImage()); //load array with all image files found in folder
 
         //if the folder is empty
-        if (files == null) {
-            System.out.println("The folder was empty or did not contain images.");
-            System.exit(0);
-        } //otherwise it has something in it
-        else {
+        if (files.length == 0) {
+            imagesLoaded = false;
+        } else {
             imagesLoaded = true;
-            currentSlide = 0;
-            h = 0;
-            w = 0;
-
         }
+        currentSlide = 0;
+        h = 0;
+        w = 0;
     }
 
     /*
-     * This method will check the folder to see if any new files have been
-     * uploaded or any files have been changed. If there has been changes then
-     * it will reload the directory, update "images", and return true. If not
-     * then it will simply do nothing and return false;
+     * This method reloads the directory containing the images. If no images are
+     * found then it sets imagesLoaded to false (so we dont try to paint them)
+     * and tells the program that there are 0 slides. Since loading a list of
+     * files is easy (in terms of computing time) we can just do this everytime
+     * without regard for how many slides there might be.
      *
-     * Returning a boolean is really for future updates. It is not used at the
-     * moment.
      */
-    private boolean checkUpdates() {
+    private void checkUpdates() {
         //get images/files to check them
         File folder = new File(folderPath);
         files = folder.listFiles(new OnlyImage());
-        //if stored modified timestamp is the same then we dont need to do anything
-        /*
-         * if (newestModified >= tempTime) { return false; }
-         */
-        //otherwise the folder has been updated so reload images and reset modified time
 
-        imagesLoaded = true;
-
-        return true;
+        if (files.length == 0) {
+            imagesLoaded = false;
+        } else {
+            imagesLoaded = true;
+        }
+        this.repaint();
     }
 
     /*
@@ -293,41 +285,37 @@ class Slideshow extends Component {
             checkUpdates();
             currentSlide = 0;
             this.repaint();
-            return;
+        } else {
+            currentSlide++;
+            this.repaint();
         }
-        currentSlide++;
-        this.repaint();
+
     }
+    
+    
 
     @Override
     public void paint(Graphics g) {
+        if (fm == null) {
+            fm = g.getFontMetrics(F);
+            
+        }
+
         if (imagesLoaded) {
             try {
                 g.drawImage(ImageIO.read(files[currentSlide]).getScaledInstance(w, h, java.awt.Image.SCALE_SMOOTH), 0, 0, null);
+                String temp = Integer.toString(currentSlide);
+                g.setFont(F);
+                g.drawString(temp, (w / 2 - fm.stringWidth(temp) / 2), h / 2);
             } catch (IOException ex) {
-                Logger.getLogger(Slideshow.class.getName()).log(Level.SEVERE, null, ex);
+                //if an IOException is thrown it probably means the file has been deleted
+                //so just update the slides and start over
+                this.checkUpdates();
             }
-        }
-    }
-    /*
-     * This method returns the latest modified timestamp of the files in the
-     * given array of files.
-     */
-
-    private static long getLatestModified(File[] files) {
-        long longTime = 0L;
-        if (files == null) {
-            return 0L;
         } else {
-            //find the most recently modified file time
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].lastModified() > longTime) {
-                    longTime = files[i].lastModified();
-                }
-            }
+            g.setFont(F);
+            g.drawString("Loading Images...", (w / 2 - fm.stringWidth("Loading Images...") / 2), h / 2);
         }
-
-        return longTime;
     }
 
     /*
