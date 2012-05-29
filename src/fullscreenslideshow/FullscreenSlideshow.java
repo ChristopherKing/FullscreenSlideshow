@@ -15,25 +15,7 @@ package fullscreenslideshow;
  * directory onto monitor 1. Ex. FullscreenSlideshow.jar 1 "C:\\test" 0
  * "C:\\test2" This will load images from C:\test onto monitor 1 and images from
  * C:\test2 onto monitor 0.
- *
- *
- */
-/*
- * TODO: Fix memory issue. Currently the program loads all images in the
- * directory into memory. This is fine until the directory has 400 full HD
- * images. This begins to take up a lot of unnecessary memory. Need to implement
- * some kind of buffer when the number of images gets too high.
- *
- *
- * Another issue is the reloading of the images after every full rotation of the
- * slideshow. If the slideshow is too long then it will take too long to update
- * and if it is too short then there is a lot of unnecessary file access. There
- * should be a way to manually trigger an update immediately.
- *
- * Along the lines of the previous issues if is running all the slideshows in a
- * single thread. If one slideshow has a lot of images it might hang up the
- * other slideshow when it updates (because it has to load so many images).
- * Should probably put slideshows in their own threads.
+ * TODO: 
  * 
  * What to do if the program detects no images needs to be handled. What if
  * someone deletes all the images so that they can load new ones. Program should
