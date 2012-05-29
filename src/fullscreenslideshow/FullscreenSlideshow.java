@@ -34,6 +34,10 @@ package fullscreenslideshow;
  * single thread. If one slideshow has a lot of images it might hang up the
  * other slideshow when it updates (because it has to load so many images).
  * Should probably put slideshows in their own threads.
+ * 
+ * What to do if the program detects no images needs to be handled. What if
+ * someone deletes all the images so that they can load new ones. Program should
+ * be able to handle this and simply wait for more images instead of dying.
  */
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -41,7 +45,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
@@ -57,7 +60,7 @@ public class FullscreenSlideshow extends JFrame {
     private String path;
     private Slideshow x;
     private GraphicsConfiguration gc;
-    private volatile RunSlides thread;
+    private RunSlides thread;
 
     public FullscreenSlideshow(String path, GraphicsConfiguration gc) {
         super(gc);
@@ -100,12 +103,24 @@ public class FullscreenSlideshow extends JFrame {
         
     }
 
+    /*
+     * Starts the slideshow running 
+     */
     public void startSlides() throws InterruptedException {
         thread = new RunSlides();
         thread.start();
     }
+    
+    /*
+     * This is a simple method that just gets rid of the graphics junk after the
+     * program is finished so that the main thread will end. It is wrapped
+     * because there is no other way to access it in the windowclose event handler.
+     */
+    private void endProgram() {
+        this.dispose();
+    }
 
-    public void buildUI() throws InterruptedException {
+    public void buildUI() {
         x = new Slideshow(path);
         x.setHW(gc.getDevice().getDisplayMode().getHeight(), gc.getDevice().getDisplayMode().getWidth());
         this.add(x);
@@ -114,11 +129,16 @@ public class FullscreenSlideshow extends JFrame {
         this.setUndecorated(true);
         this.setVisible(true);
         x.repaint();
-        startSlides();
+        try {
+            startSlides();
+        } catch (InterruptedException ex) {
+            throw new RuntimeException("Interrupted", ex);
+        }
         this.addWindowListener(new WindowAdapter() {
 
             @Override
             public void windowClosing(WindowEvent e) {
+                endProgram();
                 thread.quit();
             }
         });
@@ -144,7 +164,7 @@ public class FullscreenSlideshow extends JFrame {
         boolean[] use = new boolean[gds.length];
         FullscreenSlideshow[] shows;
         String[] paths;
-
+        
         //if args has something in it and its less than or equal to the number of devices
         if (args.length > 0 && args.length <= gds.length * 2) {
             for (int i = 0; i < args.length; i += 2) {
@@ -160,7 +180,9 @@ public class FullscreenSlideshow extends JFrame {
                 paths[i] = "Z:\\test";
             }
             shows = new FullscreenSlideshow[use.length];
-        } else {
+        } 
+        //otherwise there were arguments so assume they are in correct format
+        else {
             //count the true's so that we dont waste space on unused Slideshows
             int count = 0;
             for (int i = 0; i < use.length; i++) {
@@ -168,7 +190,12 @@ public class FullscreenSlideshow extends JFrame {
                     count++;
                 }
             }
+            //creating array to hold paths entered in as command line arguments
             paths = new String[count];
+            /* This for loops loads paths to correspond with the use array and
+             * therefor the shows array. However the paths in the command line
+             * args are everyother argument so temp counts from 1,3,5,...
+             */
             int temp = 1;
             for (int i = 0; i < paths.length; i++) {
                 paths[i] = args[temp];
@@ -177,6 +204,7 @@ public class FullscreenSlideshow extends JFrame {
             shows = new FullscreenSlideshow[count];
         }
 
+        //create the slideshows using the given data/paths/devices
         int j = 0;
         for (int i = 0; i < gds.length; i++) {
             if (use[i]) {
@@ -185,28 +213,6 @@ public class FullscreenSlideshow extends JFrame {
                 j++;
             }
         }
-        boolean[] finished = new boolean[shows.length];
-        boolean[] allTrue = new boolean[shows.length];
-        for (int i = 0; i < allTrue.length; i++) {
-            allTrue[i] = true;
-        }
-        for (;;) {
-            for (int i = 0; i < shows.length; i++) {
-                finished[i] = shows[i].isFinished();
-            }
-
-            if (Arrays.equals(finished, allTrue)) {
-                System.exit(0);
-            }
-        }
-
-        //FullscreenSlideshow s = new FullscreenSlideshow(path);
-        /*
-         * while (true) { Thread.sleep(5000); for (int i = 0; i < shows.length;
-         * i++) { shows[i].x.nextSlide(); }
-         *
-         * }
-         */
 
     }
 }
